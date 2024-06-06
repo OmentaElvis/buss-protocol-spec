@@ -71,3 +71,20 @@ These are the response values to clients
 |-----|--------|------------
 | 00  | Seen   | The request was seen by the server but no action was performed. Useful for debugging connections.
 | 01  | Success | The Action was successful (OK)
+
+### String <a name="string"></a>
+Strings are represented as:
+
+```c
+struct String {
+  u32: length;
+  u8[length] chars;
+}
+```
+unlike c, strings are not null terminated. The strings are in utf8 format.
+
+- `length` the number of characters(bytes) in the string
+- `chars array` the characters representing the string. not null terminated.
+
+Avoiding null termination allows for efficient reading of strings. The software
+knows earlier how long the string is and allocate enough memory for it before reading.
