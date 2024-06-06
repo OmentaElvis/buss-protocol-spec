@@ -37,6 +37,7 @@ struct Header {
   u8 version_major;
   u8 version_minor;
   Action action;
+  u8 padding;
 }
 ```
 
@@ -46,6 +47,7 @@ struct Header {
 - `version_minor`: Bussing protocol version number minor. e.g. if currently at version 69.1 it will be the 1 part
 - `action`: [Action](#action-type) type representing what action the client wants executed or what response code the server
   replied with.
+- `padding`: Currently unused byte. Maybe it will be used to expand possible response codes to 65536.
 
 ### Action(u8) <a name="action-type"></a>
 This is an enum of values that tell the server what action to perform and the client what was the response code of
