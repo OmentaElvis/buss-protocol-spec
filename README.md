@@ -88,3 +88,54 @@ unlike c, strings are not null terminated. The strings are in utf8 format.
 
 Avoiding null termination allows for efficient reading of strings. The software
 knows earlier how long the string is and allocate enough memory for it before reading.
+
+### Settings <a name="settings"></a>
+Settings are values passed during both request and response that are supposed to alter
+the default behavior of the client/server. They can also carry extra information for the
+protocol. The settings type/flag are of type u8 (1 byte). This means there are 256 possible
+settings. Values from `0 to 254(0xfe)` are reserved for standard settings values. For your custom
+settings, value `0xff(255)` indicates custom settings.
+
+#### Standard settings (0x00 to 0xfe)
+
+Settings marked NOT optional indicates that the server/client must parse the settings i.e. its mandatory to know how this field is structured.
+To facilitate ignoring of optional settings, Every optional settings should have 4 bytes
+after the tag indicating what is the number bytes on the value fields. Implementers that don't care
+about a particular settings can infer the number of bytes to skip from the field length.
+
+```c
+struct OptionalSettings {
+  u8 tag; // The settings type
+  u32 length; // Number of bytes present in this settings excluding the length of tag (1byte) and length field(4bytes).
+}
+```
+For mandatory settings you don't care about, you can check its size below and skip those number of
+bytes to the next tag.
+
+| hex(tag) | size(bytes) | name | type | description | Server(optional) | Client(optional)
+|-----|-------------|------|------|-------------|------------------|-----------------
+| 00  |     4       | BodyLength| u32 | The number of bytes contained in body content| false | false
+| 01  | string.length| Host | string | The host domain name that this request was requested for| true | false
+
+
+#### Custom settings (0xff)
+These are user defined settings that the client and the server know about but it is not defined in the standard spec.
+Since its arbitrary user defined encoding, there is no way for other servers/clients to know how to
+deal with the encountered settings. This forces custom settings to define their length similar to optional settings so that
+other servers/clients can ignore the next n bytes of the custom settings. If an implementation encounters a tag (0xff), It can read the next 4 bytes which 
+represent length (n) of the custom settings and choose to ignore it by skipping the next n bytes or parse it.
+
+```c
+struct CustomSettings {
+  u8 tag;
+  u8 custom_type;
+  u32 length;
+  u8[length] bytes;
+}
+```
+
+- `tag`: Equal to `0xff`. Indicates this is a non standard tag.
+- `custom_type`: More 256 custom tags to play with depending on your needs.
+- `length`: The number of bytes the value of the custom tag takes. You can skip
+  this number of bytes if you don't recognize this custom tag.
+  
