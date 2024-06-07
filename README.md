@@ -29,8 +29,17 @@ The general valid request/response of bussin protocol is as follows.
 |       | Header |Path         | Setting count|  Settings    | body
 |-------|--------|-------------|--------------|-------------|---
 |Size   |8 bytes |string length| 2 bytes      | n           | n
-|Offset |0 bytes | +8 bytes    |              | +path.length| +settings.length bytes
 |Type   |[Header](#header-type)| [String](#string) | u16 | [Settings](#settings) | raw binary bytes
+
+```c
+struct Bussin {
+  Header header;
+  String path;
+  u16 settings_count;
+  Settings[settings_count] settings_pool;
+  u8[] body;
+}
+```
 
 ## Data types
 ### Header <a name="header-type"></a>
