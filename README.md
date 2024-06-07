@@ -2,6 +2,12 @@
 The bussin protocol is encoded in binary to ensure efficient
 transfer of request and responses.
 
+**Note**: All numerical values will be explicitly denoted with their base, 
+unless they are decimal (base 10). For example, hexadecimal numbers will 
+be prefixed with `'0x'`, binary numbers with `'0b'`, and so on. 
+Only decimal numbers will be presented without a prefix, 
+unless otherwise specified in a table or similar context.
+
 ## Base data types
 The following are the base data types and their size as used in
 BBP.
