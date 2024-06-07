@@ -18,7 +18,7 @@ BBP.
 - u64 (8 bytes)
 - double
 - float
-- strings -> {u4: length, u8[length]}
+- strings -> [String](#string)
 
 ## Endianness
 BBP uses Big Endian (Network byte order)
@@ -107,12 +107,23 @@ These are the response values to clients
 ### String <a name="string"></a>
 Strings are represented as:
 
-```c
-struct String {
-  u32: length;
-  u8[length] chars;
-}
-```
+- for utf8
+  
+  ```c
+  struct String {
+    u32: length;
+    u8[length] chars;
+  }
+  ```
+- for utf16
+  
+  ```c
+  struct String {
+    u32: length;
+    u16[length] chars;
+  }
+  ```
+
 unlike c, strings are not null terminated. The strings are in utf8 format.
 
 - `length` the number of characters(bytes) in the string
