@@ -37,7 +37,7 @@ struct Header {
   u8 version_major;
   u8 version_minor;
   Action action;
-  u8 padding;
+  u8 flags;
 }
 ```
 
@@ -47,7 +47,33 @@ struct Header {
 - `version_minor`: Bussing protocol version number minor. e.g. if currently at version 69.1 it will be the 1 part
 - `action`: [Action](#action-type) type representing what action the client wants executed or what response code the server
   replied with.
-- `padding`: Currently unused byte. Maybe it will be used to expand possible response codes to 65536.
+- `flags`: Data format flags. Various flags that describe the binary content.
+
+#### Flags
+Flags that describe the binary data contained in this protocol. These are just bit flags. There are only 8 flags we can
+squeeze on this field.
+
+| value  | hex| name  | description
+|--------|----|-------|------------
+|00000001| 01 | utf16 | Treat strings as utf16 (default utf8)
+
+##### How do i use flags.
+The flags are bit encoded. You can set a flag value by doing OR operation on it.
+
+```c
+   u8 flags = 0;
+   // set utf16 flag.
+   flags = flags | 0b00000001; // or 0x01
+```
+Check if flag was set with AND operation:
+
+```c
+   u8 flags = 0b10110011; // various other flags
+   u8 utf16_flag = 0b00000001;
+   if ((flags & utf16_flag) == utf16_flag) {
+      // do utf16 stuff
+   }
+```
 
 ### Action(u8) <a name="action-type"></a>
 This is an enum of values that tell the server what action to perform and the client what was the response code of
