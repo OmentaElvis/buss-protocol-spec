@@ -1,6 +1,61 @@
 # The Bussin Binary protocol spec
+
+
+## Networking
+The Bussin protocol is designed to be transport-agnostic, supporting both User Datagram Protocol (UDP) 
+and Transmission Control Protocol (TCP) connections. The standard ports for Bussin protocol are 420 for UDP and 42069 for TCP.
+When choosing between UDP and TCP, consider the application's requirements. UDP is well-suited for time-sensitive applications
+ that prioritize low latency, such as streaming, whereas TCP is ideal for reliable, lossless data transfer where guaranteed delivery is essential.
+
+## Security
+
+To ensure the confidentiality and integrity of data, all Bussin protocol 
+communications should be encrypted using public key cryptography.
+
+### Live Servers
+Live servers, which respond to active operations and CRUD requests, 
+require an active SSL/TLS key encryption between the browser 
+and server. This enables secure, encrypted communication between the client and server.
+
+
+### Static Servers
+Static servers serve pre-compiled and minified Bussin sites as a 
+single file archive. Since these servers only serve static files, 
+they do not process Bussin protocol requests or generate dynamic 
+content. Examples of static server hosting options include local 
+storage, cloud storage services (e.g., Dropbox, Google Drive), Git services 
+(e.g., Gitlab, Github through releases page), and other file hosting platforms. 
+To ensure the authenticity and integrity of the served file, the author should 
+digitally sign the file using their private key. The corresponding 
+public key should be served alongside the file, allowing the user's browser 
+to verify the signature and ensure that the file has not been tampered 
+with during transmission and originates from the trusted author.
+
+## Compilation
+Static websites can be compiled into a single, self-contained archive that 
+includes all necessary data to run the site successfully in a browser. This 
+compilation enables flexible hosting options, such as hosting the site locally, 
+sharing the file with others, or storing it on public file storage platforms.
+
+The compilation process also involves Just-In-Time (JIT) compilation, which 
+reduces the code size and improves performance. The specific optimizations 
+applied depend on the compiler specifications and settings.
+
+One of the benefits of static sites is their caching friendliness. 
+Browsers can compile and cache the site, allowing for faster loading 
+times on subsequent requests.
+
+Additionally, static sites can be configured to request connections to 
+external APIs or parent Bussin servers through Bussin protocol settings. 
+This feature is particularly useful for compiled WebX games that require 
+central servers for gameplay or data synchronization.
+
+# Binary format
+
 The bussin protocol is encoded in binary to ensure efficient
-transfer of request and responses.
+transfer of request and responses. Why binary? Its easier and more
+easier to pack more information into a single byte that ASCII key value pairs.
+Its also faster.
 
 **Note**: All numerical values will be explicitly denoted with their base, 
 unless they are decimal (base 10). For example, hexadecimal numbers will 
