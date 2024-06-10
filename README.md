@@ -166,14 +166,38 @@ These are the actions the server should handle.
 #### Action response
 These are the response values to clients
 
+The following are the range of response codes and their types.
+
+- **Informational (0x00-0x1F)**
+  This group of response codes provides information about the processing of a request. They indicate that the request has been received and is being processed, but do not indicate the outcome of the request. These codes are used to provide interim information about the request.
+
+- **Success (0x20-0x3F)**
+  This group of response codes indicates that a request has been successfully processed. They confirm that the requested action has been completed and that the response contains the expected outcome.
+
+- **Redirection (0x40-0x5F)**
+  This group of response codes indicates that the requested resource is not available at the expected location. They provide information about the new location of the resource or alternative actions that can be taken.
+
+- **Client Errors (0x60-0x7F)**
+  This group of response codes indicates that the request contains errors or cannot be processed due to client-side issues. They provide information about the nature of the error and may suggest corrections or alternative actions.
+
+- **Server Errors (0x80-0x9F)**
+  This group of response codes indicates that the request cannot be processed due to server-side issues. They provide information about the nature of the error and may suggest alternative actions or provide information about when the service may be available again.
+
+- **Reserved (0xA0-0xFF)**
+  This range of response codes is reserved for future use or custom implementation. They may be used to provide additional information or functionality in specific implementations.
+
 | hex | name   | Description
 |-----|--------|------------
 | 00  | Seen   | The request was seen by the server but no action was performed. Useful for debugging connections.
-| 01  | Success | The Action was successful (OK)
-| 0a  | <a name="nostate">No state</a> | The server declines to upgrade the protocol to a stateful mode, indicating that it is unable or unwilling to maintain protocol state information
-| 0b  | State storage full | The server cannot store any more settings as the session store is full.
-| 0c  | Session termination | The server is terminating the current session due to internal reasons, which will cause the connection to revert to a stateless protocol. The client should resume sending full settings with each request.
-| 0d  | Stateful mode enabled | The server has successfully upgraded the connection to a stateful protocol and is ready to store settings for the current session.
+| 20  | Success | The Action was successful (OK)
+| 21  | Stateful mode enabled | The server has successfully upgraded the connection to a stateful protocol and is ready to store settings for the current session.
+| 60  | NotFound | The requested resource does not exist or is not available for the requested action.
+| 61  | AccessDenied | The client is not authorized to perform the requested action on the specified resource.
+| 62  | MalformedRequest | The request contains invalid or malformed data, preventing the server from processing it.
+| 63  | <a name="nostate">No state</a> | The server declines to upgrade the protocol to a stateful mode, indicating that it is unable or unwilling to maintain protocol state information
+| 64  | State storage full | The server cannot store any more settings as the session store is full.
+| 80  | InternalError | An unexpected error occurred on the server, preventing it from processing the request.
+| 81  | Session termination | The server is terminating the current session due to internal reasons, which will cause the connection to revert to a stateless protocol. The client should resume sending full settings with each request.
 
 ### String <a name="string"></a>
 Strings are represented as:
