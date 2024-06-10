@@ -126,6 +126,7 @@ squeeze on this field.
 | value  | hex| name  | description
 |--------|----|-------|------------
 |00000001| 01 | utf16 | Treat strings as utf16 (default utf8)
+|00000010| 0a | state | Treat this connection as stateful. This demands the server to keep track of the current session.
 
 ##### How do i use flags.
 The flags are bit encoded. You can set a flag value by doing OR operation on it.
@@ -159,6 +160,8 @@ These are the actions the server should handle.
 | 02  | Write  | Write to the server (POST)
 | 03  | Modify | Modify operation (PUT)
 | 04  | Remove | Delete operation (DELETE)
+| 05  | UpgradeState | Requests the server to upgrade the connection to a[ stateful](#stateful) protocol, allowing the client to save settings for the current session.
+| 06  | SaveSettings | Instructs the server to store the current settings in the session store, available only in [stateful](#statefulness) mode. This allows the client to save commonly repeated settings that the server can reference for the remainder of the session.
 
 #### Action response
 These are the response values to clients
@@ -167,6 +170,10 @@ These are the response values to clients
 |-----|--------|------------
 | 00  | Seen   | The request was seen by the server but no action was performed. Useful for debugging connections.
 | 01  | Success | The Action was successful (OK)
+| 0a  | <a name="nostate">No state</a> | The server declines to upgrade the protocol to a stateful mode, indicating that it is unable or unwilling to maintain protocol state information
+| 0b  | State storage full | The server cannot store any more settings as the session store is full.
+| 0c  | Session termination | The server is terminating the current session due to internal reasons, which will cause the connection to revert to a stateless protocol. The client should resume sending full settings with each request.
+| 0d  | Stateful mode enabled | The server has successfully upgraded the connection to a stateful protocol and is ready to store settings for the current session.
 
 ### String <a name="string"></a>
 Strings are represented as:
@@ -223,6 +230,8 @@ bytes to the next tag.
 |-----|-------------|------|------|-------------|------------------|-----------------
 | 00  |     4       | BodyLength| u32 | The number of bytes contained in body content| false | false
 | 01  | string.length| Host | string | The host domain name that this request was requested for| true | false
+| 0a  |     4       | State storage size | u32 | The allowed storage size for active session. This is the space the server is willing to allocate for bussin settings in stateful mode. | true | true
+| 0b  |     8       | StateId | u64 | Unique identifier for the current session/state, sent by the server and echoed back by the client in every request when the stateful bit flag is set. | true | true
 
 
 #### Custom settings (0xff)
@@ -246,3 +255,11 @@ struct CustomSettings {
 - `length`: The number of bytes the value of the custom tag takes. You can skip
   this number of bytes if you don't recognize this custom tag.
   
+## Statefulness <a name="stateful"></a>
+By default, Bussin connections are stateless, meaning each request is processed independently without retaining any information from previous requests. As a result, the server requires the client to resubmit identifying headers with every request and response.
+
+However, clients can opt to upgrade to a stateful protocol, provided the server supports it. If the server does not support stateful mode, it should reject the request using the [No State (0x0a)](#nostate) return code.
+
+In stateful mode, the server is responsible for storing and tracking client-specified settings for future reference. The server can define limits on the maximum memory allocated for storing settings and the duration for which a state remains valid before it is deleted.
+
+While stateful connections may enhance communication speed between the server and client, they come at the cost of increased server memory usage to maintain state information.
