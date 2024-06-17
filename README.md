@@ -162,6 +162,7 @@ These are the actions the server should handle.
 | 04  | Remove | Delete operation (DELETE)
 | 05  | UpgradeState | Requests the server to upgrade the connection to a[ stateful](#stateful) protocol, allowing the client to save settings for the current session.
 | 06  | SaveSettings | Instructs the server to store the current settings in the session store, available only in [stateful](#statefulness) mode. This allows the client to save commonly repeated settings that the server can reference for the remainder of the session.
+| 07  | Execute | Executes a remote function call ([RPC](#rpc)) on the server. The client must provide the FunctionName setting, and the request body should contain the function parameters encoded using [MessagePack](#msgpack).
 
 #### Action response
 These are the response values to clients
@@ -196,6 +197,7 @@ The following are the range of response codes and their types.
 | 62  | MalformedRequest | The request contains invalid or malformed data, preventing the server from processing it.
 | 63  | <a name="nostate">No state</a> | The server declines to upgrade the protocol to a stateful mode, indicating that it is unable or unwilling to maintain protocol state information
 | 64  | State storage full | The server cannot store any more settings as the session store is full.
+| 65  | InvalidParameters | The parameters provided in the request body are invalid or do not match the expected parameter types for the specified function.
 | 80  | InternalError | An unexpected error occurred on the server, preventing it from processing the request.
 | 81  | Session termination | The server is terminating the current session due to internal reasons, which will cause the connection to revert to a stateless protocol. The client should resume sending full settings with each request.
 
@@ -256,6 +258,7 @@ bytes to the next tag.
 | 01  | string.length| Host | string | The host domain name that this request was requested for| true | false
 | 0a  |     4       | State storage size | u32 | The allowed storage size for active session. This is the space the server is willing to allocate for bussin settings in stateful mode. | true | true
 | 0b  |     8       | StateId | u64 | Unique identifier for the current session/state, sent by the server and echoed back by the client in every request when the stateful bit flag is set. | true | true
+| 0c  | string.length | FunctionName | string | The name of the function to execute. | false | false
 
 
 #### Custom settings (0xff)
@@ -287,3 +290,68 @@ However, clients can opt to upgrade to a stateful protocol, provided the server 
 In stateful mode, the server is responsible for storing and tracking client-specified settings for future reference. The server can define limits on the maximum memory allocated for storing settings and the duration for which a state remains valid before it is deleted.
 
 While stateful connections may enhance communication speed between the server and client, they come at the cost of increased server memory usage to maintain state information.
+
+## RPC capabilities <a name="rpc"></a>
+To execute a remote function call (RPC) on the server, the client must construct a request with the following components:
+
+- **Set the Action**: The client sets the action field in the header to 0x07 (Execute).
+- **Set the FunctionName Setting**: The client includes the FunctionName setting (tag 0x0c) with the name of the function to be executed on the server. The value should be a string containing the function name.
+- **Encode Function Parameters**: The client encodes the function parameters using the MessagePack protocol and includes them in the request body.
+- **Send the Request**: The client sends the constructed request to the server over the established connection (TCP or UDP).
+- **Handle the Response**: The client waits for the server's response and handles it based on the received action value:
+
+If the server responds with 0x20 (Success), the response body contains the return value of the function encoded using MessagePack. The client can decode the response body to obtain the function's return value.
+If the server responds with 0x60 (NotFound), it means the provided FunctionName is invalid or does not exist on the server. The client should handle this error accordingly.
+If the server responds with 0x65 (InvalidParameters), it indicates that the parameters provided in the request body are invalid or do not match the expected parameter types for the specified function. The client should check the parameter encoding and types and retry the request with correct parameters.
+If the server responds with 0x80 (InternalError), an error occurred during the function execution on the server. The response body may contain additional error information or details about the failure. The client should handle this error based on the provided information.
+
+
+
+Here's an example request and response flow for executing an RPC call to a function named `addNumbers` with two integer parameters 5 and 3:
+### Request
+
+```
+Header: 
+  magic_number: 0x00042069
+  version_major: 1
+  version_minor: 0
+  action: 0x07 (Execute)
+  flags: 0x00
+
+Path: "/rpc"
+Settings Count: 1
+Settings:
+  0x0c: FunctionName (string) "addNumbers"
+
+Body: (MessagePack encoded) [5, 3]  
+```
+
+### Response
+
+```
+Header:
+  magic_number: 0x00042069 
+  version_major: 1
+  version_minor: 0
+  action: 0x20 (Success)
+  flags: 0x00
+
+Body: (MessagePack encoded) 8  
+```
+In this example, the client sends a request to execute the addNumbers function with parameters 5 and 3. The server responds with 20 (Success), and the response body contains the MessagePack-encoded return value 8, which is the sum of the provided parameters.
+By following this flow, clients can leverage the Bussin Binary Protocol's RPC capabilities to execute remote functions on the server and receive the corresponding return values.
+
+## MessagePack Data Encoding <a name="msgpack"></a>
+The Bussin Binary Protocol recommends the use of MessagePack as the preferred encoding format for complex data payloads, particularly in scenarios involving Remote Procedure Calls (RPC) and the Execute action.
+
+MessagePack is a binary serialization format that is compact, fast, and designed for high-performance applications. It serves as an efficient alternative to text-based formats like JSON, providing a more optimized and space-efficient way to encode and transmit data payloads.
+
+When using the Execute action to execute remote functions on the server, the request body should contain the function parameters encoded using MessagePack. Similarly, the server should encode the return value using MessagePack in the response body.
+
+While MessagePack is the recommended encoding format for RPC scenarios, it can also be used for encoding complex data payloads in other contexts, such as sending and receiving data in RESTful-like operations.
+
+However, it's important to note that supporting MessagePack encoding is optional. Clients and servers are not required to implement MessagePack support if they do not plan to use the RPC capabilities or need to transmit complex data payloads.
+
+If MessagePack encoding is used, both the client and server implementations must follow the same encoding rules and conventions to ensure successful communication and data exchange.
+
+For more information on MessagePack and its encoding rules, please refer to the official MessagePack documentation: [https://github.com/msgpack/msgpack/blob/master/spec.md](https://github.com/msgpack/msgpack/blob/master/spec.md)
