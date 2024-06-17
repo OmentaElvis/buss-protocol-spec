@@ -126,7 +126,8 @@ squeeze on this field.
 | value  | hex| name  | description
 |--------|----|-------|------------
 |00000001| 01 | utf16 | Treat strings as utf16 (default utf8)
-|00000010| 0a | state | Treat this connection as stateful. This demands the server to keep track of the current session.
+|00000010| 02 | state | Treat this connection as stateful. This demands the server to keep track of the current session.
+|00000100| 04 | rpc   | Indicates that this request is an RPC (Remote Procedure Call). Servers that do not support RPC should check if this flag is set and respond with an appropriate error code, indicating that it cannot handle RPC requests.
 
 ##### How do i use flags.
 The flags are bit encoded. You can set a flag value by doing OR operation on it.
